@@ -2,9 +2,6 @@
 elements.py
 
 Basic classes of elements that are used in the 2D engine
-
-TODO : during update(), add points coordinates and vector??
-TODO : utiliser des array 2D numpy pour faire les coordonnées x, y
 """
 import numpy as np
 from typing import List  # type hints for lists
@@ -42,6 +39,11 @@ class Point:
 def norm(vect : np.array) -> float:
 
     return np.sqrt(np.dot(vect, vect))
+
+
+def unit_vector(vect : np.array) -> np.array:
+
+    return vect / norm(vect)
 
 
 def normal():
@@ -123,6 +125,14 @@ class Object:
         return lengths.index(min(lengths))
 
 
+    def reset_forces(self):
+        """Sets all points forces to 0 before physics processing"""
+        
+        for point in self.points:
+
+            point.f = np.array([0., 0.])
+
+
     def update(self):
         """Updates forces, velocities, and point positions"""
         pass
@@ -155,21 +165,92 @@ class SoftObject(Object):
     """
 
 
-    def __init__(self, points : List[Point], springs : List[Spring]):
+    def __init__(self, points : List[Point], springs : List[Spring]=[]):
         super().__init__(points)
 
         self.springs = springs
+
+
+    def addSpring(self, spring : Spring):
+
+        self.springs.append(spring)
+
+
+    def setSprings(self):
+        """Method to automatically set the spring setup of the object
+        It varies according to the type of SoftObject : soft ball, springy structure...
+        """
+        pass
 
 
     def spring_forces(self):
         """Called during update()
         
         Calculates spring forces on every single point of the SoftObject
+        self.reset_forces() must be called beforehand
         """
         for spring in self.springs:
 
             pt1 = self.points[spring.i1]
             pt2 = self.points[spring.i2]
 
-            f = 0. # force à calculer...
+            spring_vector = unit_vector(pt2.pos - pt1.pos)  # from pt1 to pt2
+            f = 0.  # f * spring_vector is the force vector applied on pt1
+
+            # Spring force
+            spring_length = norm(pt1.pos - pt2.pos)
+
+            f = spring.k * (spring_length - spring.l0)
+
+            # Damping force
+            rel_velocity = pt2.v - pt1.v  # velocity vector, to be projected on spring_vector
+
+            f += np.dot(rel_velocity, spring_vector) * spring.kd
+
+            # Update forces :
+            self.points[spring.i1].f += f * spring_vector
+            self.points[spring.i2].f -= f * spring_vector
+
+
+def init_ball_coordinates(r : float, n : int) -> List[Point]:
+    """Returns points coordinate that make a circle around the origin"""
+
+    points = []
+    for i in range(n):
+
+        points.append(Point(r * np.cos(2*np.pi*i/n), r * np.sin(2*np.pi*i/n)))
+
+    return points
+
+
+class SoftBall(SoftObject):
+    """Soft ball class
+    
+    A ball with springs along the side, and an internal pressure force
+
+    Parameters :
+    m : mass (kg)
+    r :  radius (m)
+    n : number of points
+
+    the mass is shared between each point
+    """
+
+    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float):
+
+        # Creating point list
+        shared_mass = m / n
+        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in init_ball_coordinates(r, n)]
+
+        # Creating spring list
+        springs = []
+        for i in range(n):
+            springs.append(Spring(i, (i+1)%n, norm(points[(i+1)%n].pos - points[i].pos), k, kd))
+
+        # Initialize base SoftObject class
+        super().__init__(points, springs)
+
+        # TODO : initialize pressure, and define a pressure calculation function
+
+        
 
