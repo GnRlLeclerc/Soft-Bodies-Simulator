@@ -6,6 +6,7 @@ Basic classes of elements that are used in the 2D engine
 import numpy as np
 from typing import List  # type hints for lists
 
+from math_func import * 
 
 class Point:
     """Basic 2D coordinates container
@@ -34,20 +35,6 @@ class Point:
     def y(self) -> float:
         return self.pos[1]
 
-
-# Useful functions for calculations on 2D coordinates
-def norm(vect : np.array) -> float:
-
-    return np.sqrt(np.dot(vect, vect))
-
-
-def unit_vector(vect : np.array) -> np.array:
-
-    return vect / norm(vect)
-
-
-def normal():
-    pass
 
 
 class Spring:
@@ -212,17 +199,6 @@ class SoftObject(Object):
             self.points[spring.i2].f -= f * spring_vector
 
 
-def init_ball_coordinates(r : float, n : int) -> List[Point]:
-    """Returns points coordinate that make a circle around the origin"""
-
-    points = []
-    for i in range(n):
-
-        points.append(Point(r * np.cos(2*np.pi*i/n), r * np.sin(2*np.pi*i/n)))
-
-    return points
-
-
 class SoftBall(SoftObject):
     """Soft ball class
     
@@ -236,11 +212,11 @@ class SoftBall(SoftObject):
     the mass is shared between each point
     """
 
-    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float):
+    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float, pressure_coeff : float):
 
         # Creating point list
         shared_mass = m / n
-        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in init_ball_coordinates(r, n)]
+        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in self.init_ball_coordinates(r, n)]
 
         # Creating spring list
         springs = []
@@ -251,6 +227,27 @@ class SoftBall(SoftObject):
         super().__init__(points, springs)
 
         # TODO : initialize pressure, and define a pressure calculation function
+
+        self.S0 = self.surface()  # initial surface
+        self.pressure_coeff = pressure_coeff
+
+        # pressure force : line_length * (1/V - 1/V0) * stiffness_coeff
+
+
+    def init_ball_coordinates(r : float, n : int) -> List[Point]:
+        """Returns points coordinate that make a circle around the origin"""
+
+        points = []
+        for i in range(n):
+
+            points.append(Point(r * np.cos(2*np.pi*i/n), r * np.sin(2*np.pi*i/n)))
+
+        return points
+
+    def pressure_forces(self):
+        """Calculate pressure forces on the side points"""
+        pass
+
 
         
 
