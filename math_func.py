@@ -36,5 +36,15 @@ def rescale(coordinates : List[np.array], scale : int, size_y : int):
     The y axis change in direction is also taken into account
     """
     return [(int(point[0]*scale), size_y - int(point[1]*scale)) for point in coordinates]
+
+
+def pixel_to_coord(pos : tuple, scale : float, max_y : int):
+    """
+    Pixels coordinates to float coordinates
+    """
+    x = pos[0] / scale
+    y = max_y - pos[1] / scale
+
+    return (x, y)
     
 

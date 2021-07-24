@@ -127,11 +127,27 @@ class Object:
         
         return True  # By default, if no negative dot product has been found
 
-    # TODO : method that applies a force to the point of the Object that is nearest 
-    # to a given point : could be used in order to "pick" a shape with the mouse 
     # TODO : method that gives the closest coordinates that are out of the Object
     # if a point is inside : could be used to compute a collision and avoid the
     # merging of two objects
+
+    def grabNearestPoint(self, point : Point, dt : float):
+        """
+        Grabs the object's point which is nearest to point, and
+        applies an immediate change of position with a specific velocity
+        in order to "grab" the object with a mouse click
+        """
+        # Get nearest point index :
+        distances = [norm(point.pos - pt.pos) for pt in self.points]
+        i = distances.index(min(distances))
+
+        # Compute a velocity that scales with distance, in order to bring the object
+        # closer to the mouse cursor quickly
+        pt = self.points[i]
+        velocity = (point.pos - pt.pos) / pt.m  # Directly proportionnal to the distance
+
+        # Update position
+        pt.pos += velocity * dt
 
 
     def reset_forces(self):

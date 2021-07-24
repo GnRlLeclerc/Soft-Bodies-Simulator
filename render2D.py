@@ -61,7 +61,23 @@ class Render:
     def addObject(self, object : Object):
         """Add an object before starting simulation"""
         self.objectList.append(object)
+
+
+    def getClosestObject(self, point : Point) -> Object:
+        """
+        Get the object which is the closest to the point
+        (using barycentre)
+        """
         
+        if len(self.objectList) == 0:
+            return None
+        else:
+            distances = [norm(point.pos - object.barycentre().pos) for object in self.objectList]
+
+            index = distances.index(min(distances))
+
+            return self.objectList[index] 
+            
 
     def start(self):
         """Start the simulation"""
@@ -72,8 +88,6 @@ class Render:
         # Screen parameters :
         window = pg.display.set_mode((self.size_x, self.size_y))
 
-        # TODO : take into account the switch in direction between Y screen axis and simulation y axis
-
         while True:
             
             # Pygame event loop
@@ -82,11 +96,26 @@ class Render:
                 # QUIT events
                 if event.type == pg.QUIT:
                     pg.quit()
-                    sys.exit()
+                    sys.exit()              
              
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         pg.event.post(pg.event.Event(pg.QUIT))
+
+            # Out of event loop : grab shapes
+
+            if pg.mouse.get_pressed()[0]:  # left click detected / held pressed
+
+                pos = pg.mouse.get_pos()  # cursor pos in pixels
+
+                x,y = pixel_to_coord(pos, self.scale, self.ymax)
+                mouse_pos = Point(x, y)  # cursor pos in x,y float coordinates
+
+                # Bring the closest object near the cursor
+                closest_obj = self.getClosestObject(mouse_pos)
+                if closest_obj is not None:
+
+                    closest_obj.grabNearestPoint(mouse_pos, self.dt)
 
             # Clear screen
             window.fill(white)
