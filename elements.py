@@ -7,11 +7,10 @@ Global variables : dt
 TODO : il faudrait une sorte de classe bien plus générale qui contient dt
 """
 import numpy as np
-from typing import List
-
-from numpy.core.einsumfunc import _parse_possible_contraction  # type hints for lists
+from typing import List  # type hints for lists
 
 from math_func import * 
+
 
 class Point:
     """Basic 2D coordinates container
@@ -29,14 +28,16 @@ class Point:
     def __init__(self, x : float, y : float, m : float=0):
         
         self.pos = np.array([x, y])
-        self.v = np.array([0, 0])
-        self.f = np.array([0, 0])
+        self.v = np.array([0., 0.])  # IMPORTANT : type must be float
+        self.f = np.array([0., 0.])
 
         self.m = m
 
+    @property  # call function without brackets
     def x(self) -> float:
         return self.pos[0]
 
+    @property
     def y(self) -> float:
         return self.pos[1]
 
@@ -109,10 +110,28 @@ class Object:
 
 
     def isIn(self, point : Point) -> bool:
-        """Checks if given point is inside the object"""
-        # TODO
-        # Idea : returns None, or the nearest surface point in order to compute collision
-        pass
+        """Checks if given point is inside the object
+        Method used : 
+        if the given point is inside the object, any vector going from this
+        point to any point of the object will have a positive dot product
+        with the vector going from the barycentre to the given point        
+        """
+        barycentre_vec = point.pos - self.barycentre().pos
+
+        for pt in self.points:
+
+            pt_vec = pt.pos - point.pos
+
+            if np.dot(barycentre_vec, pt_vec) < 0:
+                return False
+        
+        return True  # By default, if no negative dot product has been found
+
+    # TODO : method that applies a force to the point of the Object that is nearest 
+    # to a given point : could be used in order to "pick" a shape with the mouse 
+    # TODO : method that gives the closest coordinates that are out of the Object
+    # if a point is inside : could be used to compute a collision and avoid the
+    # merging of two objects
 
 
     def reset_forces(self):
@@ -124,7 +143,8 @@ class Object:
 
 
     def update(self, dt : float):
-        """Updates forces, velocities, and point positions"""
+        """CALL AT EACH LOOP ITERATION : 
+        Updates forces, velocities, and point positions"""
         pass
 
 
@@ -134,7 +154,6 @@ class Object:
         """
 
         for point in self.points:
-
             point.v += point.f * dt / point.m
             point.pos += point.v * dt
 
@@ -171,8 +190,9 @@ class Object:
 
     def surface(self) -> float:
         """Returns the surface of the object
-        Depending on whether the points order is direct or not, S
-        will be positive or negative. To handle both cases : abs
+        Depending on whether the rotation direction of the points
+        is positive or not, S will be positive or negative.
+        To handle both cases : abs
         """
 
         S = 0
@@ -189,12 +209,20 @@ class Object:
         return abs(S)
 
 
-    def render(self):
+    def point_coordinates(self) -> List[np.array]:
+        """Returns a list [(x,y), (x,y)] of the coordinates of every point
+        of the shape, ready to use for pygame.draw.polygon(window, color, points)
         """
-        Render the Object in pygame
-        # TODO
+        return [ point.pos for point in self.points]
+
+    def gravity_forces(self, g : float=9.81):
+        """Compute gravity forces for each point
+        g = 9.81 m/s² : gravity acceleration
         """
-        pass
+
+        for point in self.points:
+
+            point.f += np.array([0, -g * point.m])
 
 
 class SoftObject(Object):
@@ -213,13 +241,6 @@ class SoftObject(Object):
     def addSpring(self, spring : Spring):
 
         self.springs.append(spring)
-
-
-    def setSprings(self):
-        """Method to automatically set the spring setup of the object
-        It varies according to the type of SoftObject : soft ball, springy structure...
-        """
-        pass
 
 
     def spring_forces(self):
@@ -288,7 +309,7 @@ class SoftBall(SoftObject):
         # pressure force : line_length * (1/V - 1/V0) * stiffness_coeff
 
 
-    def init_ball_coordinates(r : float, n : int) -> List[Point]:
+    def init_ball_coordinates(self, r : float, n : int) -> List[Point]:
         """Returns points coordinate that make a circle around the origin"""
 
         points = []
@@ -299,7 +320,7 @@ class SoftBall(SoftObject):
         return points
 
     def pressure_forces(self):
-        """Calculate pressure forces on the side points"""
+        """Calculate pressure forces on the side points of the Object"""
         
         # Pressure to apply on every line of the Object
         P = self.pressure_coeff * (1/self.surface() - 1/self.S0)
@@ -313,7 +334,7 @@ class SoftBall(SoftObject):
             # Remark : in SoftBall, the points are listed in the positive direction of...
             # ...rotation : normal() will return a normal vector pointing inwards
 
-            ext_vector = - normal(pt1, pt2)
+            ext_vector = - normal(pt1.pos, pt2.pos)
             side_length = norm(pt1.pos - pt2.pos)
 
             F = side_length * P * ext_vector
@@ -325,7 +346,9 @@ class SoftBall(SoftObject):
 
 
     def update(self, dt : float):
-        """Update the physics of the object over a dt time-step"""
+        """
+        Update the physics of the object over a dt time-step
+        """
         
         # Update forces
 
@@ -335,6 +358,7 @@ class SoftBall(SoftObject):
         # Calculate forces
         self.spring_forces()
         self.pressure_forces()
+        self.gravity_forces()
 
         # Update velocity and position for each point
         self.update_points(dt)
