@@ -3,14 +3,14 @@ elements.py
 
 Basic classes of elements that are used in the 2D engine
 
-Global variables : dt
-TODO : il faudrait une sorte de classe bien plus générale qui contient dt
 """
 import numpy as np
 from typing import List  # type hints for lists
 
 from math_func import * 
 
+
+GRAB_MIN = 0.02  # (m) minimal distance between mouse and grabbed point, when attraction stops
 
 class Point:
     """Basic 2D coordinates container
@@ -73,6 +73,10 @@ class Object:
     def __init__(self, points : List[Point]):
 
         self.points = points  # Points list
+        
+        # A point in the shape that has been grabbed and is treated differently
+        self.grabbed_point : Point = None  # It stores the instance of the point : use "if pt is self.grabbed_point"
+
 
     def barycentre(self) -> Point:
         """returns the x,y coordinates of the center point"""
@@ -131,7 +135,7 @@ class Object:
     # if a point is inside : could be used to compute a collision and avoid the
     # merging of two objects
 
-    def grabNearestPoint(self, point : Point, dt : float):
+    def grabNearestPoint(self, point : Point):
         """
         Grabs the object's point which is nearest to point, and
         applies an immediate change of position with a specific velocity
@@ -141,13 +145,33 @@ class Object:
         distances = [norm(point.pos - pt.pos) for pt in self.points]
         i = distances.index(min(distances))
 
-        # Compute a velocity that scales with distance, in order to bring the object
-        # closer to the mouse cursor quickly
-        pt = self.points[i]
-        velocity = (point.pos - pt.pos) / pt.m  # Directly proportionnal to the distance
+        # Set the nearest point as the "grabbed point"
+        self.grabbed_point = self.points[i]
+     
+     
+    def computeGrabbedPoint(self, mouse : Point, dt : float):
+        """Moves the grabbed point closer to the mouse
+        Computes a velocity that scales with distance, in order to bring
+        the object closer to the mouse
+        
+        In order to keep the grab force strong, even though the grabbed point 
+        gets closer to the mouse, the velocity norm scales with the distance 
+        bewteen the mouse and barycentre
+        """
 
-        # Update position
-        pt.pos += velocity * dt
+        # Compute a velocity that scales with distance, in order to bring the object
+        # closer to the mouse cursor quickly.
+
+        
+        velocity = (mouse.pos - self.grabbed_point.pos)  # Directly proportionnal to the distance
+
+        if norm(velocity) > GRAB_MIN or self.grabbed_point.x > mouse.x:
+            # Compute only if point not close enough, or hangs higher than mouse (less realistic)
+
+            velocity *= norm(mouse.pos - self.barycentre().pos) / norm(velocity)  # scaling with barycentre
+
+            # Update position
+            self.grabbed_point.pos += velocity *dt
 
 
     def reset_forces(self):
@@ -170,8 +194,9 @@ class Object:
         """
 
         for point in self.points:
-            point.v += point.f * dt / point.m
-            point.pos += point.v * dt
+            if point is not self.grabbed_point:
+                point.v += point.f * dt / point.m
+                point.pos += point.v * dt
 
 
     def compute_container_box_collision(self, xmin : float, xmax : float, ymin : float, ymax : float):

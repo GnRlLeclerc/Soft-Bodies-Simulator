@@ -46,6 +46,8 @@ class Render:
 
         self.objectList : List[Object] = []  # Empty object list
 
+        self.grabbed_object : Object = None  # Grabbed object whose point must be moved
+
     
     def setBoundaries(self, xmax : float, ymax : float):
         """Set container box boundaries, limited by screen size"""
@@ -88,6 +90,8 @@ class Render:
         # Screen parameters :
         window = pg.display.set_mode((self.size_x, self.size_y))
 
+        pg.display.set_caption("2D physics engine")
+
         while True:
             
             # Pygame event loop
@@ -96,26 +100,50 @@ class Render:
                 # QUIT events
                 if event.type == pg.QUIT:
                     pg.quit()
-                    sys.exit()              
+                    sys.exit()   
+
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if event.button == 1:  # left click
+
+                        pos = pg.mouse.get_pos()  # cursor position in pixels
+
+                        x,y = pixel_to_coord(pos, self.scale, self.ymax)
+                        mouse_pos = Point(x, y)  # cursor pos in x,y float coordinates
+
+                        # Set a point to be the "grabbed point"
+                        # The "grabbed point" is ignored by its shape "update"
+                        # It is only moved 
+
+                        # Bring the closest object near the cursor
+                        self.grabbed_object = self.getClosestObject(mouse_pos)
+                        if self.grabbed_object is not None:
+
+                            # The nearest point's state is changed to "grabbed point"
+                            self.grabbed_object.grabNearestPoint(mouse_pos)
+                    
+                elif event.type == pg.MOUSEBUTTONUP:
+                    if event.button == 1:  # Left click is released
+
+                        # Release the grabbed point
+                        self.grabbed_object.grabbed_point = None
+                        self.grabbed_object = None
              
+
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         pg.event.post(pg.event.Event(pg.QUIT))
 
-            # Out of event loop : grab shapes
-
-            if pg.mouse.get_pressed()[0]:  # left click detected / held pressed
-
-                pos = pg.mouse.get_pos()  # cursor pos in pixels
+            # Process the grabbed point:
+            if self.grabbed_object is not None:
+                
+                # Mouse position :
+                pos = pg.mouse.get_pos()  # cursor position in pixels
 
                 x,y = pixel_to_coord(pos, self.scale, self.ymax)
                 mouse_pos = Point(x, y)  # cursor pos in x,y float coordinates
 
-                # Bring the closest object near the cursor
-                closest_obj = self.getClosestObject(mouse_pos)
-                if closest_obj is not None:
+                self.grabbed_object.computeGrabbedPoint(mouse_pos, self.dt)
 
-                    closest_obj.grabNearestPoint(mouse_pos, self.dt)
 
             # Clear screen
             window.fill(white)
