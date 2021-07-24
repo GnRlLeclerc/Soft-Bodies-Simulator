@@ -2,9 +2,14 @@
 elements.py
 
 Basic classes of elements that are used in the 2D engine
+
+Global variables : dt
+TODO : il faudrait une sorte de classe bien plus générale qui contient dt
 """
 import numpy as np
-from typing import List  # type hints for lists
+from typing import List
+
+from numpy.core.einsumfunc import _parse_possible_contraction  # type hints for lists
 
 from math_func import * 
 
@@ -92,7 +97,10 @@ class Object:
 
         
     def isInBoundingBox(self, point : Point) -> bool:
-        
+        """Checks if given point is in the Object's bouding box
+        in order to limit complexity and avoid calling self.isIn each time
+        """
+
         pt1, pt2 = self.boundingBox()
 
         if point.x > pt2.x or point.y > pt2.y or point.x < pt1.x or point.y < pt1.y:
@@ -100,16 +108,11 @@ class Object:
         return True
 
 
-    def nearest(self, point : Point) -> int:
-        """point must be in the bounding box
-        returns the index of the object's nearest point to point
-        """
-
-        assert self.isInBoundingBox(point)  # DEBUG purposes
-
-        lengths = [norm(point.pos - pt.pos) for pt in self.points]
-
-        return lengths.index(min(lengths))
+    def isIn(self, point : Point) -> bool:
+        """Checks if given point is inside the object"""
+        # TODO
+        # Idea : returns None, or the nearest surface point in order to compute collision
+        pass
 
 
     def reset_forces(self):
@@ -120,9 +123,50 @@ class Object:
             point.f = np.array([0., 0.])
 
 
-    def update(self):
+    def update(self, dt : float):
         """Updates forces, velocities, and point positions"""
         pass
+
+
+    def update_points(self, dt : float):
+        """Updates the velocity and position of each point based on the forces applied on them
+        Euler's integration method
+        """
+
+        for point in self.points:
+
+            point.v += point.f * dt / point.m
+            point.pos += point.v * dt
+
+
+    def compute_container_box_collision(self, xmin : float, xmax : float, ymin : float, ymax : float):
+        """Computes the collisions with the box that contains all Objects
+        Solid contact : if there is a contact :
+        * tangent velocity = 0
+        * normal velocity *= -1
+        """
+        for point in self.points:
+
+            
+            if point.y < ymin:
+                point.pos[1] = ymin
+                point.v *= -1.  # invert velocity direction
+                point.v[0] = 0.  # void tangent velocity
+
+            elif point.x > xmax:
+                point.pos[0] = xmax
+                point.v *= -1.  # invert velocity direction
+                point.v[1] = 0.  # void tangent velocity
+
+            elif point.x < xmin:
+                point.pos[0] = xmin
+                point.v *= -1.
+                point.v[1] = 0.
+
+            elif point.y > ymax:
+                point.pos[1] = ymax
+                point.v *= -1.
+                point.v[0] = 0.
 
 
     def surface(self) -> float:
@@ -143,6 +187,14 @@ class Object:
             S += (pt2.y + pt1.y) * (pt2.x - pt1.x) / 2
 
         return abs(S)
+
+
+    def render(self):
+        """
+        Render the Object in pygame
+        # TODO
+        """
+        pass
 
 
 class SoftObject(Object):
@@ -195,8 +247,10 @@ class SoftObject(Object):
             f += np.dot(rel_velocity, spring_vector) * spring.kd
 
             # Update forces :
-            self.points[spring.i1].f += f * spring_vector
-            self.points[spring.i2].f -= f * spring_vector
+            pt1.f += f * spring_vector
+            pt2.f -= f * spring_vector
+
+            # pt1 is self.points[spring.i1] -> True. pt1, pt2 are references
 
 
 class SoftBall(SoftObject):
@@ -246,8 +300,62 @@ class SoftBall(SoftObject):
 
     def pressure_forces(self):
         """Calculate pressure forces on the side points"""
-        pass
-
-
         
+        # Pressure to apply on every line of the Object
+        P = self.pressure_coeff * (1/self.surface() - 1/self.S0)
+
+        n = len(self.points)
+        for i in range(n):
+
+            pt1 = self.points[i]
+            pt2 = self.points[(i+1)%n]
+
+            # Remark : in SoftBall, the points are listed in the positive direction of...
+            # ...rotation : normal() will return a normal vector pointing inwards
+
+            ext_vector = - normal(pt1, pt2)
+            side_length = norm(pt1.pos - pt2.pos)
+
+            F = side_length * P * ext_vector
+
+            # The pressure force is shared between the 2 points
+
+            pt1.f += F / 2
+            pt2.f += F / 2
+
+
+    def update(self, dt : float):
+        """Update the physics of the object over a dt time-step"""
+        
+        # Update forces
+
+        # Reset point forces to 0.
+        self.reset_forces()
+        
+        # Calculate forces
+        self.spring_forces()
+        self.pressure_forces()
+
+        # Update velocity and position for each point
+        self.update_points(dt)
+
+        # Do not forget to then call collision detection methods!
+
+
+class SpringyBox(SoftObject):
+    """Spring box : jello-like appearance, only springs
+    
+    TODO : how to build structures made out of small cubes?
+    """
+
+    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float):
+
+
+        # TODO
+        points = []
+        springs = []
+
+        super().__init__(points, springs=springs)
+
+
 

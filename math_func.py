@@ -23,7 +23,7 @@ def normal(vec1 : np.array, vec2 : np.array):
     * points are listed in the positive rotation direction -> this returns an ext normal
     * points are listed in the negative rotation direction -> this returns an in normal
     """
-    vec = vec2 - vec1
+    vec = unit_vector(vec2 - vec1)
 
     return np.array([vec[1], -vec[0]])
 
