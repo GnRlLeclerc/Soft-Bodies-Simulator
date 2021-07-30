@@ -79,14 +79,15 @@ class Object:
 
 
     def barycentre(self) -> Point:
-        """returns the x,y coordinates of the center point"""
+        """Returns the shape's barycentre : average position and velocity"""
 
-        x = sum([point.x for point in self.points])
-        y = sum([point.y for point in self.points])
+        barycentre = Point(0, 0)
 
-        n = len(self.points)
+        barycentre.pos = np.average(np.array([point.pos for point in self.points]), 0)
 
-        return Point(x/n, y/n)
+        barycentre.v = np.average(np.array([point.v for point in self.points]), 0)
+
+        return barycentre
 
 
     def boundingBox(self) -> List[Point]:
@@ -328,7 +329,8 @@ class SoftBall(SoftObject):
     the mass is shared between each point
     """
 
-    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float, pressure_coeff : float):
+    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float,
+        pressure_coeff : float, pressure_damping_coeff : float):
 
         # Creating point list
         shared_mass = m / n
@@ -346,6 +348,7 @@ class SoftBall(SoftObject):
 
         self.S0 = self.surface()  # initial surface
         self.pressure_coeff = pressure_coeff
+        self.pressure_damp = pressure_damping_coeff
 
         # pressure force : line_length * (1/V - 1/V0) * stiffness_coeff
 
@@ -373,9 +376,9 @@ class SoftBall(SoftObject):
             pt2 = self.points[(i+1)%n]
 
             # Remark : in SoftBall, the points are listed in the positive direction of...
-            # ...rotation : normal() will return a normal vector pointing inwards
+            # ...rotation : normal() will return a normal vector pointing outwards
 
-            ext_vector = - normal(pt1.pos, pt2.pos)
+            ext_vector = normal(pt1.pos, pt2.pos)
             side_length = norm(pt1.pos - pt2.pos)
 
             F = side_length * P * ext_vector
@@ -384,6 +387,22 @@ class SoftBall(SoftObject):
 
             pt1.f += F / 2
             pt2.f += F / 2
+
+
+    def pressure_damping_forces(self):
+        """Pressure damping force between every point and the barycenter of the shape"""
+
+        barycentre = self.barycentre()  # Shape barycentre
+
+        for point in self.points:
+            
+            # "spring" vector, along which the damping force is applied
+            vector = unit_vector(barycentre.pos - point.pos)
+
+            # Projecting relative speed along the vector
+            f = np.dot(vector, point.v - barycentre.v) * self.pressure_damp * vector
+
+            point.f -= f  # The force applied goes in the opposite direction
 
 
     def update(self, dt : float):
@@ -400,6 +419,7 @@ class SoftBall(SoftObject):
         self.spring_forces()
         self.pressure_forces()
         self.gravity_forces()
+        self.pressure_damping_forces()
 
         # Update velocity and position for each point
         self.update_points(dt)

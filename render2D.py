@@ -21,6 +21,7 @@ SCALE = 100  # pixels per meter
 # Colors :
 blue = pg.Color(0, 0, 255)  # Shape color
 white = pg.Color(255, 255, 255)  # Background color
+red = pg.Color(255, 0, 0)  # Vector color
 
 
 class Render:
@@ -156,6 +157,26 @@ class Render:
                 object.compute_container_box_collision(self.xmin, self.xmax, self.ymin, self.ymax)
 
                 pg.draw.polygon(window, blue, rescale(object.point_coordinates(), self.scale, self.size_y))
+
+                # Displaying normal vectors (on top of the shape)
+                for i in range(len(object.points)):
+
+                    pt1, pt2 = object.points[i].pos, object.points[(i+1)%len(object.points)].pos
+
+                    # Center position of each side
+                    center = (pt1 + pt2)/2
+
+                    # Point in the side's normal direction, 1 meter farther
+                    normal_point = center + normal(pt1, pt2)
+
+                    # 2D x,y coordinates to position on screen
+                    center, normal_point = rescale((center, normal_point), self.scale, self.size_y)
+
+                    # Drawing the 1 meter long vector
+                    pg.draw.line(window, red, center, normal_point)
+
+                    
+                    
  
             # Update screen and monitor fps   
             pg.display.update()
