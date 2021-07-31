@@ -21,7 +21,8 @@ SCALE = 100  # pixels per meter
 # Colors :
 blue = pg.Color(0, 0, 255)  # Shape color
 white = pg.Color(255, 255, 255)  # Background color
-red = pg.Color(255, 0, 0)  # Vector color
+red = pg.Color(255, 0, 0)  # Spring color
+black = pg.Color(0, 0, 0)  # Normal vector color
 
 
 class Render:
@@ -48,6 +49,10 @@ class Render:
         self.objectList : List[Object] = []  # Empty object list
 
         self.grabbed_object : Object = None  # Grabbed object whose point must be moved
+
+        # Display spring, normal
+        self.display_normal = False
+        self.display_springs = False
 
     
     def setBoundaries(self, xmax : float, ymax : float):
@@ -134,6 +139,13 @@ class Render:
                     if event.key == pg.K_ESCAPE:
                         pg.event.post(pg.event.Event(pg.QUIT))
 
+                    # Change display normal vectors on pressing key A (qwerty -> q -> A key in azerty)
+                    elif event.key == pg.K_q:
+                        self.display_normal = not self.display_normal
+                    # Display springs on pressing key Z (azerty Z is qwerty w)
+                    elif event.key == pg.K_w:
+                        self.display_springs = not self.display_springs
+
             # Process the grabbed point:
             if self.grabbed_object is not None:
                 
@@ -150,32 +162,46 @@ class Render:
             window.fill(white)
 
             # Update the objects physics and then render them on the screen
-            for object in self.objectList:
+            for obj in self.objectList:
 
-                object.update(self.dt)
+                obj.update(self.dt)
 
-                object.compute_container_box_collision(self.xmin, self.xmax, self.ymin, self.ymax)
+                obj.compute_container_box_collision(self.xmin, self.xmax, self.ymin, self.ymax)
 
-                pg.draw.polygon(window, blue, rescale(object.point_coordinates(), self.scale, self.size_y))
+                pg.draw.polygon(window, blue, rescale(obj.point_coordinates(), self.scale, self.size_y))
 
-                # Displaying normal vectors (on top of the shape)
-                for i in range(len(object.points)):
 
-                    pt1, pt2 = object.points[i].pos, object.points[(i+1)%len(object.points)].pos
+                if self.display_normal:
+                    # Displaying normal vectors (on top of the shape)
+                    for i in range(len(obj.points)):
 
-                    # Center position of each side
-                    center = (pt1 + pt2)/2
+                        pt1, pt2 = obj.points[i].pos, obj.points[(i+1)%len(obj.points)].pos
 
-                    # Point in the side's normal direction, 1 meter farther
-                    normal_point = center + normal(pt1, pt2)
+                        # Center position of each side
+                        center = (pt1 + pt2)/2
 
-                    # 2D x,y coordinates to position on screen
-                    center, normal_point = rescale((center, normal_point), self.scale, self.size_y)
+                        # Point in the side's normal direction, 1 meter farther
+                        normal_point = center + normal(pt1, pt2)
 
-                    # Drawing the 1 meter long vector
-                    pg.draw.line(window, red, center, normal_point)
+                        # 2D x,y coordinates to position on screen
+                        center, normal_point = rescale((center, normal_point), self.scale, self.size_y)
 
-                    
+                        # Drawing the 1 meter long vector
+                        pg.draw.line(window, black, center, normal_point)
+                
+
+                if isinstance(obj, SoftObject) and self.display_springs:  # Has springs & display
+
+                    for spring in obj.springs:
+
+                        # Get the coordinates of the spring's edge points
+                        pt1, pt2 = obj.points[spring.i1].pos, obj.points[spring.i2].pos
+
+                        # Rescale them to the screen display size
+                        pt1, pt2 = rescale((pt1, pt2), self.scale, self.size_y)
+
+                        # Draw spring :
+                        pg.draw.line(window, red, pt1, pt2, 2)  # Line size = 2 : thicker
                     
  
             # Update screen and monitor fps   

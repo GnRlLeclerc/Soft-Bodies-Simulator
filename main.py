@@ -1,14 +1,6 @@
 """
 main.py
 
-TODO :
-finish the pressure ball (start with a square)
-
-issue : the shape 'explodes' : issue with unstable oscillations (good example with the triangle)
-=> volume might be the issue
-
-idea : to prevent crashing, a test at each frame could correct extreme behaviour
-
 """
 from render2D import Render
 from elements import *
@@ -16,13 +8,47 @@ from elements import *
 renderObject = Render()
 
 renderObject.addObject(SoftBall(
-    Point(5, 2),  # Center point
-    0.1,  # Total mass (kg)
+    Point(4, 1),  # Center point
+    1,  # Total mass (kg)
     0.5,  # Ball radius (m)
-    4,  # Number of points
-    20.,  # spring stiffness
-    0.2,  # spring damping coefficient
-    0.5,  # Pressure coeff
+    10,  # Number of points
+    40,  # spring stiffness
+    0.1,  # spring damping coefficient
+    60,  # Pressure coeff
     0.2))  # Pressure damping coeff
 
 renderObject.start()
+
+
+
+"""
+Working presets :
+# If shape is unstable, increase inertia by increasing mass
+# this means that the k / m ratio cannot exceed a certain value because
+# of sampling effect. Python might be too slow in order to be able to
+# increase FPS
+
+# A water-drop-like ball. There are still issues with grabbing the shape, as it creates
+# a stress on the shape that is too high to be stable
+SoftBall(
+    Point(4, 1),  # Center point
+    5,  # Total mass (kg)
+    0.5,  # Ball radius (m)
+    50,  # Number of points
+    40,  # spring stiffness
+    0.1,  # spring damping coefficient
+    60,  # Pressure coeff
+    0.2))  # Pressure damping coeff
+
+
+# A soft polygon, less glitchy than the previous preset
+SoftBall(
+    Point(4, 1),  # Center point
+    1,  # Total mass (kg)
+    0.5,  # Ball radius (m)
+    10,  # Number of points
+    40,  # spring stiffness
+    0.1,  # spring damping coefficient
+    60,  # Pressure coeff
+    0.2))  # Pressure damping coeff
+"""
