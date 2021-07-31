@@ -1,19 +1,27 @@
 """
 main.py
 
+TODO : collision between shapes
+TODO : big shapes made out of springy boxes (maybe with another class,
+not related to SpringyBox)
 """
 from render2D import Render
 from elements import *
 
 renderObject = Render()
 
-renderObject.addObject(SpringyBox(
-    Point(2, 2),  # Starting position
-    0.1,  # Total mass  
-    0.5,  # Radius
-    7,  # k
-    0.2)  # kd
+renderObject.addObject(SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.5,
+    2,
+    4,
+    10,
+    0.2
 )
+
+)
+
 
 renderObject.start()
 
@@ -51,7 +59,7 @@ SoftBall(
     0.2)  # Pressure damping coeff
 
 
-# A jelly like square
+# A jelly like square. kd = 0.05 for a much springier box
 SpringyBox(
     Point(2, 2),  # Starting position
     0.1,  # Total mass  

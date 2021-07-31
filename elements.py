@@ -473,3 +473,111 @@ class SpringyBox(SoftObject):
         self.update_points(dt)
 
 
+
+class SpringyStructure(SoftObject):
+    """SpringyStructure class:
+    A structure made of SpringyBoxes
+    
+    => springyboxes with parameters k, kd
+    pos : starting position : bottom left corner
+    m : total mass
+    side : length of any box'side
+    width, height : number of boxes aligned along the sides of the structure
+    
+    """
+
+    def __init__(self, pos, m : float, side : float, width : int, height : int, k : float, kd : float):
+
+
+        # Initialize the points in the right order to facilitate the creation of springs
+        # Order : left to right
+        # Then : bottom to top
+        points = []
+        shared_mass = m / (width * height)
+
+        for j in range(height):
+            for i in range(width):
+
+                points.append(Point(
+                    pos.x + i * side,
+                    pos.y + j * side,
+                    shared_mass
+                ))
+
+        # Initialize springs : 
+        # Cross springs, then top and right springs
+        # Last, springs along the bottom and left side are created
+        springs = []
+        diagonal = np.sqrt(2)*side  # cross spring l0
+
+        for j in range(height-1):
+            for i in range(width-1):
+
+                # First cross spring :
+                springs.append(Spring(
+                    i + j,
+                    i + j + width + 1,
+                    diagonal,
+                    k,
+                    kd,
+                ))
+
+                # Second cross spring
+                springs.append(Spring(
+                    i + j + 1,
+                    i + j + width,
+                    diagonal,
+                    k,
+                    kd,
+                ))
+
+                # Top spring
+                springs.append(Spring(
+                    i + j + width,
+                    i + j + width + 1,
+                    side,
+                    k,
+                    kd,
+                ))
+
+                # Right spring
+                springs.append(Spring(
+                    i + j + width + 1,
+                    i + j + 1,
+                    side,
+                    k,
+                    kd,
+                ))
+        
+        # All the bottom and left side springs :
+        # Bottom:
+        for i in range(width-1):
+            springs.append(Spring(
+                i,
+                i + 1,
+                side,
+                k,
+                kd
+            ))
+        # Left
+        for j in range(height - 1):
+            springs.append(Spring(
+                j * width,
+                (j+1) * width,
+                side,
+                k,
+                kd,
+            ))
+
+        # Initialize base SoftObject class
+        super().__init__(points, springs)
+
+    
+    def update(self, dt : float):
+        """Reimplementation of base class method, same as SpringyBox"""
+
+        self.reset_forces()
+
+        self.spring_forces()
+        self.gravity_forces()
+        self.update_points(dt)
