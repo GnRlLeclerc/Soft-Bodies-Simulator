@@ -488,10 +488,16 @@ class SpringyStructure(SoftObject):
 
     def __init__(self, pos, m : float, side : float, width : int, height : int, k : float, kd : float):
 
+        # width, height : number of squares. In order to avoid confusion : 
+        width += 1
+        height += 1
+
+
 
         # Initialize the points in the right order to facilitate the creation of springs
         # Order : left to right
         # Then : bottom to top
+
         points = []
         shared_mass = m / (width * height)
 
@@ -513,19 +519,19 @@ class SpringyStructure(SoftObject):
         for j in range(height-1):
             for i in range(width-1):
 
-                # First cross spring :
+                # First cross spring : bottom left to top right (ISSUE HERE)
                 springs.append(Spring(
-                    i + j,
-                    i + j + width + 1,
+                    i + j * width,
+                    i + (j + 1) * width + 1,
                     diagonal,
                     k,
                     kd,
                 ))
 
-                # Second cross spring
+                # Second cross spring : bottom right to top left
                 springs.append(Spring(
-                    i + j + 1,
-                    i + j + width,
+                    i + j * width + 1,
+                    i + (j + 1) * width,
                     diagonal,
                     k,
                     kd,
@@ -533,8 +539,8 @@ class SpringyStructure(SoftObject):
 
                 # Top spring
                 springs.append(Spring(
-                    i + j + width,
-                    i + j + width + 1,
+                    i + (j + 1) * width,
+                    i + (j + 1) * width + 1,
                     side,
                     k,
                     kd,
@@ -542,8 +548,8 @@ class SpringyStructure(SoftObject):
 
                 # Right spring
                 springs.append(Spring(
-                    i + j + width + 1,
-                    i + j + 1,
+                    i + (j + 1) * width + 1,
+                    i + j * width + 1,
                     side,
                     k,
                     kd,
@@ -572,6 +578,27 @@ class SpringyStructure(SoftObject):
         # Initialize base SoftObject class
         super().__init__(points, springs)
 
+        # Edge points, useful for displaying the polygon
+        # TODO : add the references in the right order
+
+        self.edge_points = []
+
+        # Bottom edge
+        for i in range(width):
+            self.edge_points.append(points[i])
+
+        # Right edge
+        for i in range(width-1, width*height, width):
+            self.edge_points.append(points[i])
+
+        # Top edge, from right to left
+        for i in range(width * height-1, width * (height-1), -1):
+            self.edge_points.append(points[i])
+
+        # Left edge, from top to bottom
+        for i in range(width*(height-1), -width,-width):
+            self.edge_points.append(points[i])
+
     
     def update(self, dt : float):
         """Reimplementation of base class method, same as SpringyBox"""
@@ -581,3 +608,11 @@ class SpringyStructure(SoftObject):
         self.spring_forces()
         self.gravity_forces()
         self.update_points(dt)
+
+
+    def point_coordinates(self) -> List[np.array]:
+        """Reimplementation of base class method:
+        Only return the points that are part of the polygon's side,
+        and in the right order
+        """
+        return [point.pos for point in self.edge_points]

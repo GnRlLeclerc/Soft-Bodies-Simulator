@@ -1,24 +1,28 @@
 """
 main.py
 
-TODO : collision between shapes
-TODO : big shapes made out of springy boxes (maybe with another class,
-not related to SpringyBox)
+
+# TODO : max fps mode : to test the limits of the rendering engine, and stiffer structures
+(display fps too)
+# TODO : take collisions between shapes into account
+
 """
 from render2D import Render
 from elements import *
 
-renderObject = Render()
+renderObject = Render(fps=100)
 
-renderObject.addObject(SpringyStructure(
-    Point(1, 1),
-    1.,
-    0.5,
-    2,
-    4,
-    10,
-    0.2
-)
+
+
+renderObject.addObject(SoftBall(
+    Point(4, 1),  # Center point
+    1,  # Total mass (kg)
+    0.5,  # Ball radius (m)
+    50,  # Number of points
+    100,  # spring stiffness
+    0.2,  # spring damping coefficient
+    100,  # Pressure coeff
+    0.2)  # Pressure damping coeff
 
 )
 
@@ -66,5 +70,43 @@ SpringyBox(
     0.5,  # Radius
     7,  # k
     0.2)  # kd
+
+
+# A vertical block of jelly
+SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.5,
+    2,
+    3,
+    30,
+    0.2
+)
+# Issue : with 30 FPS, k cannot be raised too much, else the shape is unstable
+
+# Same shape, with 100 fps instead of 30 (else, unstable)
+SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.5,
+    2,
+    3,
+    50,
+    0.4
+)
+
+# Same SoftBall with 100 fps : stiffness can be increased, and the result is much better
+SoftBall(
+    Point(4, 1),  # Center point
+    1,  # Total mass (kg)
+    0.5,  # Ball radius (m)
+    50,  # Number of points
+    100,  # spring stiffness
+    0.2,  # spring damping coefficient
+    100,  # Pressure coeff
+    0.2)  # Pressure damping coeff
+
+)
+
 
 """
