@@ -7,15 +7,13 @@ from elements import *
 
 renderObject = Render()
 
-renderObject.addObject(SoftBall(
-    Point(4, 1),  # Center point
-    1,  # Total mass (kg)
-    0.5,  # Ball radius (m)
-    10,  # Number of points
-    40,  # spring stiffness
-    0.1,  # spring damping coefficient
-    60,  # Pressure coeff
-    0.2))  # Pressure damping coeff
+renderObject.addObject(SpringyBox(
+    Point(2, 2),  # Starting position
+    0.1,  # Total mass  
+    0.5,  # Radius
+    7,  # k
+    0.2)  # kd
+)
 
 renderObject.start()
 
@@ -38,7 +36,7 @@ SoftBall(
     40,  # spring stiffness
     0.1,  # spring damping coefficient
     60,  # Pressure coeff
-    0.2))  # Pressure damping coeff
+    0.2)  # Pressure damping coeff
 
 
 # A soft polygon, less glitchy than the previous preset
@@ -50,5 +48,15 @@ SoftBall(
     40,  # spring stiffness
     0.1,  # spring damping coefficient
     60,  # Pressure coeff
-    0.2))  # Pressure damping coeff
+    0.2)  # Pressure damping coeff
+
+
+# A jelly like square
+SpringyBox(
+    Point(2, 2),  # Starting position
+    0.1,  # Total mass  
+    0.5,  # Radius
+    7,  # k
+    0.2)  # kd
+
 """

@@ -334,7 +334,7 @@ class SoftBall(SoftObject):
 
         # Creating point list
         shared_mass = m / n
-        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in self.init_ball_coordinates(r, n)]
+        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in SoftBall.init_ball_coordinates(r, n)]
 
         # Creating spring list
         springs = []
@@ -352,14 +352,17 @@ class SoftBall(SoftObject):
 
         # pressure force : line_length * (1/V - 1/V0) * stiffness_coeff
 
-
-    def init_ball_coordinates(self, r : float, n : int) -> List[Point]:
-        """Returns points coordinate that make a circle around the origin"""
+    @staticmethod
+    def init_ball_coordinates(r : float, n : int, angle_offset=0.) -> List[Point]:
+        """Returns points coordinate that make a circle around the origin
+        Angle offset : so that 3 point or 4 point shape do not fall flat on
+        the ground upon starting the simulation, but slightly angled
+        """
 
         points = []
         for i in range(n):
 
-            points.append(Point(r * np.cos(2*np.pi*i/n), r * np.sin(2*np.pi*i/n)))
+            points.append(Point(r * np.cos(2*np.pi*i/n+angle_offset), r * np.sin(2*np.pi*i/n+angle_offset)))
 
         return points
 
@@ -428,19 +431,45 @@ class SoftBall(SoftObject):
 
 
 class SpringyBox(SoftObject):
-    """Spring box : jello-like appearance, only springs
+    """Spring box : jello-like appearance, only springs, 4 points
+
+    pos : starting position
+    m : total mass
+    r : "square radius" : the shape is generated using 4 points inside a circle
+    whose radius is r
+    k : spring stiffness
+    kd : spring damping coefficient
     
     TODO : how to build structures made out of small cubes?
     """
 
-    def __init__(self, pos : Point, m : float, r : float, n : int, k : float, kd : float):
+    def __init__(self, pos : Point, m : float, r : float, k : float, kd : float):
 
+        shared_mass = m / 4
 
-        # TODO
-        points = []
+        # Create points:
+        points = [Point(pt.x + pos.x, pt.y + pos.y, shared_mass) for pt in SoftBall.init_ball_coordinates(r, 4, 0.1)]
+
+        # Create springs along the side: 
         springs = []
+        for i in range(4):
+            springs.append(Spring(i, (i+1)%4, norm(points[(i+1)%4].pos - points[i].pos), k, kd))
 
-        super().__init__(points, springs=springs)
+        # Create cross springs
+        springs.append(Spring(0, 2, 2*r, k, kd))  # Diagonal length is 2r
+        springs.append(Spring(1, 3, 2*r, k, kd))
 
+        # Initialize base SoftObject class
+        super().__init__(points, springs)
+
+
+    def update(self, dt : float):
+        """Reimplementation of base class method"""
+
+        self.reset_forces()
+
+        self.spring_forces()
+        self.gravity_forces()
+        self.update_points(dt)
 
 
