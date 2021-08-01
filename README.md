@@ -1,9 +1,27 @@
-# 2D-physics-engine
+# Soft-Bodies-Simulator
+2D soft boy simulation using pygame, numpy
 
-2D simulation using pygame, numpy
+---SETUP---
+Made in python 3.7.3 64-bit
+Modules used : pygame, numpy, and built-in modules
 
-soft bodies and hard bodies simulations:
-springs, pressure forces...
+---GUIDE---
+The code is documented
+
+Example setups are provided in main.py
+
+Interacting with the simulation :
+
+-> right-click to pick up the closest point to the cursor and move a shape
+
+-> keys (AZERTY)
+- A : show normal vectors (only recommended for SoftBall objects, not well implemented for Springy Boxes and Structures)
+- Z : show springs (in red)
+- E : show max FPS available. Based on each frames' computing time, displays the maximum fps available. Refreshes every second
+If the specified fps is too high, the simulation will run slower, but at the specified time step (1/fps) for Euler integration.
+Better fps improves stability and enables higher force coefficients with lighter masses (else, unstable oscillations can occur)
+
+---PHYSICS---
 
 The different objects are generated inside a box the size of the window.
 
@@ -14,12 +32,12 @@ ELements of an object :
 
 Forces applied to points and Euler integration
 
-- Springs : 3 paramaters : l0, k, kd
+- Springs : 3 parameters : l0, k, kd
 l0 : rest length of the spring
 k : stiffness coefficient of the srping
 kd : dampening coefficient, in order to avoid infinite oscillations
 
-F = k * (length - l0)  # spring elastic force
+F = k * (length - l0)  # spring elastic force : Hooke's law
 Fk = kd * d(length)/dt = kd * spring_points_relative_speed  # dampening force
 
 - Pressure (not yet finished)
