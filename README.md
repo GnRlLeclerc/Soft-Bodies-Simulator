@@ -32,12 +32,12 @@ ELements of an object :
 
 Forces applied to points and Euler integration
 
-- Springs : 3 paramaters : l0, k, kd
+- Springs : 3 parameters : l0, k, kd
 l0 : rest length of the spring
 k : stiffness coefficient of the srping
 kd : dampening coefficient, in order to avoid infinite oscillations
 
-F = k * (length - l0)  # spring elastic force
+F = k * (length - l0)  # spring elastic force : Hooke's law
 Fk = kd * d(length)/dt = kd * spring_points_relative_speed  # dampening force
 
 - Pressure (not yet finished)
