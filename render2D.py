@@ -104,7 +104,7 @@ class Render:
         # Screen parameters :
         window = pg.display.set_mode((self.size_x, self.size_y))
 
-        pg.display.set_caption("2D physics engine")
+        pg.display.set_caption("Soft bodies simulator")
 
         start, new_time = 0., 0.  # Fps monitoring
         seconds = 0.

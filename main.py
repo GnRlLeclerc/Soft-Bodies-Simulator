@@ -9,12 +9,20 @@ main.py
 from render2D import Render
 from elements import *
 
-renderObject = Render(fps=200)
+renderObject = Render(100, 1024, 512)
 
 
 
 renderObject.addObject(
-# Add an object from the example list
+SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.5,
+    2,
+    5,
+    100,
+    0.4
+)
 )
 
 renderObject.start()
