@@ -14,18 +14,16 @@ renderObject = Render(fps=100)
 
 
 
-renderObject.addObject(SoftBall(
-    Point(4, 1),  # Center point
-    1,  # Total mass (kg)
-    0.5,  # Ball radius (m)
-    50,  # Number of points
-    100,  # spring stiffness
-    0.2,  # spring damping coefficient
-    100,  # Pressure coeff
-    0.2)  # Pressure damping coeff
-
-)
-
+renderObject.addObject(SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.5,
+    2,
+    3,
+    80,
+    
+    0.4
+))
 
 renderObject.start()
 
