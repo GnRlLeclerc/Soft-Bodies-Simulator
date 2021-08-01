@@ -8,6 +8,8 @@ import pygame as pg
 from elements import *
 import sys
 from typing import List
+from time import time
+from statistics import mean
 
 
 # Default values that work well
@@ -23,6 +25,8 @@ blue = pg.Color(0, 0, 255)  # Shape color
 white = pg.Color(255, 255, 255)  # Background color
 red = pg.Color(255, 0, 0)  # Spring color
 black = pg.Color(0, 0, 0)  # Normal vector color
+
+
 
 
 class Render:
@@ -53,6 +57,10 @@ class Render:
         # Display spring, normal
         self.display_normal = False
         self.display_springs = False
+        
+        # Display max fps available based on frames computing time
+        self.monitor_fps = False
+        self.monitor_period = 1.  # (seconds) : time between each fps update
 
     
     def setBoundaries(self, xmax : float, ymax : float):
@@ -98,8 +106,21 @@ class Render:
 
         pg.display.set_caption("2D physics engine")
 
+        start, new_time = 0., 0.  # Fps monitoring
+        seconds = 0.
+        time_counter = []  # Use mean() to get average frame time
+
+
+        # Font to display fps :
+        font = pg.font.SysFont(None, 24)  # Adjust font side if needed (here : 24 px)
+        img = pg.Surface((0, 0))  # Initialize surface
+
         while True:
             
+
+            # Get frame beginning time
+            start = time()
+
             # Pygame event loop
             for event in pg.event.get():
 
@@ -145,6 +166,11 @@ class Render:
                     # Display springs on pressing key Z (azerty Z is qwerty w)
                     elif event.key == pg.K_w:
                         self.display_springs = not self.display_springs
+                    # Display max available fps (updated every second)
+                    elif event.key == pg.K_e:
+                        self.monitor_fps = not self.monitor_fps
+                        seconds = time()  # Reset time passed
+                        time_counter = []  # Reset time counter
 
             # Process the grabbed point:
             if self.grabbed_object is not None:
@@ -202,6 +228,25 @@ class Render:
 
                         # Draw spring :
                         pg.draw.line(window, red, pt1, pt2, 2)  # Line size = 2 : thicker
+
+            # Display available fps
+            if self.monitor_fps:
+                
+                new_time = time()
+                # Update counter
+                time_counter.append(new_time - start)
+
+                if seconds + self.monitor_period < new_time:
+                    seconds += self.monitor_period
+
+                    # Display fps
+                    img = font.render("Available FPS : " + str(int(1/mean(time_counter))), True, black)
+
+                    # Reset counter:
+                    time_counter = []
+
+                # Each loop : display fps
+                window.blit(img, (0, 0))  # Print the fps in the top left corner
                     
  
             # Update screen and monitor fps   

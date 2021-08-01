@@ -2,28 +2,20 @@
 main.py
 
 
-# TODO : max fps mode : to test the limits of the rendering engine, and stiffer structures
-(display fps too)
 # TODO : take collisions between shapes into account
+# TODO : only grab edge points in SpringyStructure
 
 """
 from render2D import Render
 from elements import *
 
-renderObject = Render(fps=100)
+renderObject = Render(fps=200)
 
 
 
-renderObject.addObject(SpringyStructure(
-    Point(1, 1),
-    1.,
-    0.5,
-    2,
-    3,
-    80,
-    
-    0.4
-))
+renderObject.addObject(
+# Add an object from the example list
+)
 
 renderObject.start()
 
@@ -88,8 +80,8 @@ SpringyStructure(
     1.,
     0.5,
     2,
-    3,
-    50,
+    5,
+    200,
     0.4
 )
 
@@ -104,6 +96,18 @@ SoftBall(
     100,  # Pressure coeff
     0.2)  # Pressure damping coeff
 
+)
+
+# At least 200 fps :
+
+SpringyStructure(
+    Point(1, 1),
+    1.,
+    0.2,
+    4,
+    10,
+    200,
+    0.4
 )
 
 
