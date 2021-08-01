@@ -24,7 +24,16 @@ Fk = kd * d(length)/dt = kd * spring_points_relative_speed  # dampening force
 
 - Pressure (not yet finished)
 An object can be subject to a pressure force :
-P = object_stiffness * (1/current_surface - 1/rest_surface)
+P = pressure_coeff * (1/current_surface - 1/rest_surface)
+
+pressure_coeff : P = nRT/V => pressure_coeff = total energy of the gaz particle model.
+When pressure_coeff is increased, the particle's energy is increased with the external pressure (total energy/rest volume). The result is a less compressible particle
+
+pressure dampening coefficient : in order to dissipate energy, a dampening force proportionnal to each point's relative velocity to the barycentre is applied. It is linked to the particle's internal viscosity
+
+F/S = visc * dv/dx
+F = visc * dv.dx * S = visc * rel_velocity * S/dx
+=> pressure_dampening_coeff = viscosity * distance_between_barycentre_and_point = viscosity * radius
 
 In reality, pressures are scalar fields in volume that apply forces to surfaces
 In this 2D engine, pressures are scalar fields in shape surfaces that apply forces to the lines that make up the outline of a shape.
@@ -38,8 +47,6 @@ A pressure force is applied to each pair of point that are part of an object's o
 
 A pressure damping force also needs to be applied to reduce oscillations between opposing points that are not
 linked by any spring. This force works like a spring damping force between every point and the shape's barycentre.
-
-TODO : identify the physical meaning of "pressure_coeff" and maybe "pressure_damping_coeff" also.
 
 All of theses forces, along with gravity, are integrated in real time using Euler integration.
 
