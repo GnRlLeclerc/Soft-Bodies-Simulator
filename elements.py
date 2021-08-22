@@ -260,7 +260,7 @@ class Object:
         of the shape, ready to use for pygame.draw.polygon(window, color, points)
         (only edge points)
         """
-        return [ point.pos for point in self.edge_points]
+        return [point.pos for point in self.edge_points]
 
     def gravity_forces(self, g : float=9.81):
         """Compute gravity forces for each point
@@ -645,11 +645,3 @@ class SpringyStructure(SoftObject):
         self.spring_forces()
         self.gravity_forces()
         self.update_points(dt)
-
-
-    def point_coordinates(self) -> List[np.array]:
-        """Reimplementation of base class method:
-        Only return the points that are part of the polygon's side,
-        and in the right order
-        """
-        return [point.pos for point in self.edge_points]
