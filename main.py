@@ -9,7 +9,7 @@ main.py
 from render2D import Render
 from elements import *
 
-renderObject = Render(100, 1024, 512)
+renderObject = Render(30, 1024, 512)
 
 
 
@@ -19,9 +19,9 @@ SpringyStructure(
     1.,
     0.5,
     2,
-    5,
-    100,
-    0.4
+    3,
+    30,
+    0.2
 )
 )
 

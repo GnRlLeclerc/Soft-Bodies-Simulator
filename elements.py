@@ -61,6 +61,8 @@ class Spring:
         self.kd = kd
 
 
+## MAIN BASE CLASS
+
 class Object:
     """Object class
     
@@ -70,9 +72,11 @@ class Object:
     Contains helful methods for other classes that inherit from it
     """
 
-    def __init__(self, points : List[Point]):
+    def __init__(self, points : List[Point], edge_points : List[Point] = None):
 
         self.points = points  # Points list
+
+        self.edge_points = edge_points or self.points  # si pas précisé
         
         # A point in the shape that has been grabbed and is treated differently
         self.grabbed_point : Point = None  # It stores the instance of the point : use "if pt is self.grabbed_point"
@@ -123,7 +127,7 @@ class Object:
         """
         barycentre_vec = point.pos - self.barycentre().pos
 
-        for pt in self.points:
+        for pt in self.edge_points:
 
             pt_vec = pt.pos - point.pos
 
@@ -238,12 +242,12 @@ class Object:
         """
 
         S = 0
-        pt_count = len(self.points)
+        pt_count = len(self.edge_points)
 
         for i in range(pt_count):
 
-            pt1 = self.points[i]
-            pt2 = self.points[(i+1)%pt_count]
+            pt1 = self.edge_points[i]
+            pt2 = self.edge_points[(i+1)%pt_count]
 
             # Surface of a trapèze
             S += (pt2.y + pt1.y) * (pt2.x - pt1.x) / 2
@@ -254,8 +258,9 @@ class Object:
     def point_coordinates(self) -> List[np.array]:
         """Returns a list [(x,y), (x,y)] of the coordinates of every point
         of the shape, ready to use for pygame.draw.polygon(window, color, points)
+        (only edge points)
         """
-        return [ point.pos for point in self.points]
+        return [ point.pos for point in self.edge_points]
 
     def gravity_forces(self, g : float=9.81):
         """Compute gravity forces for each point
@@ -267,6 +272,8 @@ class Object:
             point.f += np.array([0, -g * point.m])
 
 
+## MAIN ABSTRACT SUBCLASSES
+
 class SoftObject(Object):
     """Soft Object class
     
@@ -274,10 +281,12 @@ class SoftObject(Object):
     """
 
 
-    def __init__(self, points : List[Point], springs : List[Spring]=[]):
-        super().__init__(points)
+    def __init__(self, points : List[Point], springs : List[Spring]=None, edge_points : List[Point] = None):
 
-        self.springs = springs
+
+        super().__init__(points, edge_points)
+
+        self.springs = springs or []  # Empty list if springs is None
 
 
     def addSpring(self, spring : Spring):
@@ -316,6 +325,33 @@ class SoftObject(Object):
             # pt1 is self.points[spring.i1] -> True. pt1, pt2 are references
 
 
+class FixedObject(Object):
+    """FixedObject class
+
+    An Object with some points that are fixed, and do not experience any force nor can be grabbed
+
+    ex : base class to NetObject, that emulates the behaviour of a net, or a realistic piece of fabric
+    """
+    def __init__(self, points: List[Point], edge_points : List[Point] = None, movablePoints : List[Point] = None):
+        super().__init__(points)
+
+
+        # Points that are movable (easier to iterate through during update)
+        self.movablePoints = movablePoints
+
+    # TODO : reimplement base methods to only affect self.movablePoints
+
+    # TODO : rendering : self.edgePoints is needed. See is code can be put in a common base class TODO :DONE
+
+    # TODO : maybe more easy if Object had different lists : 
+    # self.movablePoints  -> the points that are affected by forces
+    # self.polygonPoints  -> the points that are displayed
+    # self.grabbablePoints-> the points that can be grabbed
+
+    # This way, no FixedObject class is needed
+
+## USABLE SUBCLASSES
+
 class SoftBall(SoftObject):
     """Soft ball class
     
@@ -342,7 +378,7 @@ class SoftBall(SoftObject):
             springs.append(Spring(i, (i+1)%n, norm(points[(i+1)%n].pos - points[i].pos), k, kd))
 
         # Initialize base SoftObject class
-        super().__init__(points, springs)
+        super().__init__(points, springs)  # no edge_points -> edge_points are set to all the points
 
         # TODO : initialize pressure, and define a pressure calculation function
 
@@ -460,7 +496,7 @@ class SpringyBox(SoftObject):
         springs.append(Spring(1, 3, 2*r, k, kd))
 
         # Initialize base SoftObject class
-        super().__init__(points, springs)
+        super().__init__(points, springs)  # no edge_points : they are set to all the points by default
 
 
     def update(self, dt : float):
@@ -575,29 +611,30 @@ class SpringyStructure(SoftObject):
                 kd,
             ))
 
-        # Initialize base SoftObject class
-        super().__init__(points, springs)
+        edge_points = []
+
 
         # Edge points, useful for displaying the polygon
-        # TODO : add the references in the right order
-
-        self.edge_points = []
 
         # Bottom edge
         for i in range(width):
-            self.edge_points.append(points[i])
+            edge_points.append(points[i])
 
         # Right edge
         for i in range(width-1, width*height, width):
-            self.edge_points.append(points[i])
+            edge_points.append(points[i])
 
         # Top edge, from right to left
         for i in range(width * height-1, width * (height-1), -1):
-            self.edge_points.append(points[i])
+            edge_points.append(points[i])
 
         # Left edge, from top to bottom
         for i in range(width*(height-1), -width,-width):
-            self.edge_points.append(points[i])
+            edge_points.append(points[i])
+
+
+        # Initialize base SoftObject class
+        super().__init__(points, springs, edge_points)
 
     
     def update(self, dt : float):
